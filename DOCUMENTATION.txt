@@ -1,0 +1,190 @@
+================================================================================
+                          STARLIGHT SKY
+                 Collaborative Infinite Night Sky Canvas
+================================================================================
+Version: 1.0.0
+Date: 2026-10-21
+
+================================================================================
+1. OVERVIEW & VISION
+================================================================================
+
+Starlight Sky is a public, collaborative, infinite 2D night-sky canvas where
+anyone can draw a custom pixel star, place it anywhere in the sky, and attach a
+message, wish, memory, dream, or time capsule for global visitors to discover.
+
+Visitors pan and zoom across an endless celestial expanse, click on stars to
+inspect them in a glassmorphism modal, send "stardust" upvotes, and hear each
+star's unique harmonic chime. Ambient generative audio (drones, LFO warble,
+random celestial chimes) creates an ever-evolving soundscape without external
+audio files.
+
+Core experiences:
+  * Infinite Night Sky  – pan/zoom canvas with parallax star layers, shooting
+    stars, dynamic constellations, auroras, and nebulae.
+  * Star Creator Studio – 16x16 pixel/grid canvas with draw, erase, fill,
+    glow intensity, color picker, plus creator name, message, category tag,
+    optional time-capsule release date, and a per-star Web Audio chime.
+  * Star Inspection   – click any star to open a glassmorphism modal showing
+    creator, message, coordinates, tag, stardust count, and a chime button.
+  * Stardust (upvotes)  – send/receive stardust reactions on stars.
+  * Cosmic Audio Engine – generative ambient drone + per-star harmonic chimes,
+    synthesized on-the-fly via the Web Audio API.
+  * Real-time multiplayer – Socket.io broadcasts star placement, updates,
+    deletions, and stardust votes to all connected visitors instantly.
+
+Vision: a shared, poetic, persistent corner of the internet where people leave
+small marks of hope, memory, or imagination under a common night sky — no
+accounts, no ads, just stars and wishes.
+
+================================================================================
+2. SYSTEM ARCHITECTURE & TECH STACK
+================================================================================
+
+2.1 Tech Stack
+--------------
+  * Backend:     Node.js + Express
+  * Realtime:    Socket.io (WebSockets) for live star placement & stardust
+  * Frontend:    HTML5 Canvas 2D (sky rendering), CSS glassmorphism UI
+  * Audio:       Web Audio API (synthesized drone, chimes, LFO; no audio files)
+  * Styling:     Custom CSS (CSS variables, backdrop-filter glassmorphism)
+  * Fonts:       Space Grotesk + JetBrains Mono (Google Fonts)
+  * Storage:     Local in-memory Map (default) with optional Firebase or
+                 MongoDB persistence hooks; .env for configuration
+  * UUIDs:       uuid / nanoid for star and voter identifiers
+
+2.2 Project Structure
+---------------------
+  starlight-sky/
+  ├── DOCUMENTATION.txt        # This file
+  ├── package.json             # Node deps & scripts
+  ├── .env.example             # Config template (copy to .env)
+  ├── .gitignore
+  ├── server.js                # Express + Socket.io backend + REST API
+  └── public/
+      ├── index.html           # Single-page application
+      ├── css/
+      │   └── style.css        # Glassmorphism & layout styles
+      └── js/
+          ├── audio-engine.js  # Cosmic Audio Engine (Web Audio API)
+          ├── sky-engine.js    # Infinite canvas, layers, rendering, input
+          ├── creator-studio.js# Star creator studio + pixel grid
+          └── app.js           # Main orchestrator, socket, REST, UI
+
+2.3 Data Model (Star record)
+----------------------------
+  {
+    id: string,                         // nanoid
+    x, y: number,                       // world coordinates
+    creator: string,                    // handle
+    message: string,                    // wish / message
+    tag: 'Memory' | 'Wish' | 'Dream' | 'Art',
+    timeCapsule: string | null,         // ISO date or null
+    pixelData: number[][],              // 16x16 binary grid
+    glow: number,                       // 0-1
+    color: string,                      // hex
+    audio: { freq: number, type: string }, // chime synth params
+    stardust: number,                   // upvote count
+    createdAt: string                   // ISO timestamp
+  }
+
+2.4 API Endpoints
+-----------------
+  GET    /api/health                  # health check
+  GET    /api/stars                   # list all stars
+  GET    /api/stars/:id               # single star
+  POST   /api/stars                   # create a star
+  PUT    /api/stars/:id               # update a star
+  DELETE /api/stars/:id               # delete a star
+  POST   /api/stars/:id/stardust      # toggle stardust vote
+
+2.5 Socket.io Events
+--------------------
+  Client -> Server:
+    star:place        # place a new star (broadcast to others)
+    star:stardust     # toggle stardust vote
+    star:update       # update a star
+    star:delete       # delete a star
+    presence:join     # announce presence
+  Server -> Client:
+    sky:init          # initial full star set on connect
+    star:created      # new star placed
+    star:updated      # star updated
+    star:deleted      # star removed
+    star:stardust     # stardust tally changed
+    presence:joined / presence:left
+
+================================================================================
+3. QUICKSTART & LOCAL SETUP
+================================================================================
+
+3.1 Prerequisites
+-----------------
+  * Node.js >= 16 (https://nodejs.org)
+  * npm (bundled with Node)
+
+3.2 Install
+-----------
+  # 1. Open the project folder
+  cd /path/to/MakeAWish
+
+  # 2. Install dependencies
+  npm install
+
+  # 3. Configure environment (optional)
+  cp .env.example .env
+  # Edit .env to set PORT, CORS_ORIGIN, or plug in Firebase/MongoDB.
+  # Default: local in-memory storage — no external account required.
+
+3.3 Run
+-------
+  # Development (auto-restart)
+  npm run dev
+
+  # Production
+  npm start
+
+  Open: http://localhost:3000
+
+3.4 First-time experience
+-------------------------
+  The server seeds demo stars so the sky is never empty. Click "Create Star" to
+  open the studio, draw a pixel star, write a wish, and place it. Click any star
+  to inspect it and send stardust.
+
+3.5 Notes
+---------
+  * Audio is gated behind a user gesture (browser autoplay policy). Click
+    anywhere or the audio toggle to enable the ambient soundscape.
+  * The 16x16 pixel canvas renders crisply (image-rendering: pixelated).
+  * Coordinates are world-space; drag to pan, wheel/buttons to zoom.
+
+================================================================================
+4. PROJECT UPDATES & CHANGELOG
+================================================================================
+
+[2026-10-21]  v1.0.0  Initial Release
+  - Scaffolded project: package.json, .env.example, .gitignore, server.js
+  - Backend: Express + Socket.io server; REST API for stars & stardust
+  - Storage: local in-memory Map with Firebase/MongoDB extension points
+  - Frontend: single-page HTML5 Canvas app with glassmorphism UI
+  - SkyEngine: infinite pan/zoom canvas, parallax star layers, shooting stars,
+    dynamic constellations, aurora bands, nebula clouds, pixel star rendering,
+    world<->screen transforms, hit detection
+  - CreatorStudio: 16x16 pixel grid, draw/erase/fill tools, glow & color
+    pickers, creator/message/tag/time-capsule form, per-star chime config
+  - CosmicAudioEngine: generative ambient drone (dual sine + LFO), random
+    celestial chimes, per-star harmonic chime (base + octave + fifth),
+    Web Audio API synthesis, gesture-based unlock
+  - app.js: Socket.io client, REST placement, glassmorphism inspection modal,
+    stardust upvotes, audio toggle, toast notifications
+  - Styles: CSS variables, responsive glassmorphism panels, mobile tweaks
+
+[2026-10-21]  v0.9.0  Pre-release (internal)
+  - Core canvas and socket plumbing established
+  - Demo seed stars implemented for first-run experience
+
+================================================================================
+End of DOCUMENTATION.txt
+================================================================================
+

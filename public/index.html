@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Starlight Sky | Collaborative Night Sky Canvas</title>
+  <meta name="description" content="Draw custom pixel stars, place them on an infinite night sky, and attach wishes, memories, or time capsules for the world to discover." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============ NIGHT SKY CANVAS ============ -->
+  <div id="sky-container" class="sky-container">
+    <canvas id="skyCanvas" class="sky-canvas"></canvas>
+    <div id="sky-overlay" class="sky-overlay">
+      <!-- Coordinates hint -->
+      <div id="coord-hint" class="coord-hint">X: 0, Y: 0</div>
+      <!-- Zoom controls -->
+      <div class="zoom-controls">
+        <button id="zoom-in" aria-label="Zoom in">+</button>
+        <button id="zoom-out" aria-label="Zoom out">−</button>
+        <button id="reset-view" aria-label="Reset view">↻</button>
+      </div>
+      <!-- Create star button -->
+      <button id="open-studio" class="btn-create" aria-label="Create a star">
+        <span class="btn-icon">✦</span>
+        <span class="btn-label">Create Star</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ STAR INSPECTION MODAL (glassmorphism) ============ -->
+  <div id="star-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-card" id="modal-card">
+      <button id="modal-close" class="modal-close" aria-label="Close inspection">&times;</button>
+      <div class="modal-header">
+        <div class="modal-star-preview" id="modal-star-preview"></div>
+        <div class="modal-info">
+          <h2 id="modal-title" class="modal-title">Star</h2>
+          <div class="modal-meta">
+            <span class="modal-tag" id="modal-tag">Wish</span>
+            <span class="modal-coords" id="modal-coords">(0, 0)</span>
+            <span class="modal-stardust" id="modal-stardust">0 ✨</span>
+          </div>
+          <div class="modal-creator" id="modal-creator">by <span id="modal-creator-name">—</span></div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p class="modal-message" id="modal-message"></p>
+        <div class="modal-timecapsule" id="modal-timecapsule" hidden>
+          <span class="tc-label">🕰️ Time Capsule</span>
+          <span class="tc-date" id="modal-tc-date"></span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-stardust" class="btn-stardust" aria-label="Send Stardust">
+          <span id="stardust-icon">🌟</span>
+          <span id="stardust-text">Send Stardust</span>
+        </button>
+        <button id="btn-play-chime" class="btn-chime" aria-label="Play star chime">
+          <span>𔂾</span> Play Chime
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ STAR CREATOR STUDIO ============ -->
+  <div id="creator-studio" class="studio-panel" hidden>
+    <div class="studio-backdrop" id="studio-backdrop"></div>
+    <div class="studio-card">
+      <div class="studio-header">
+        <h2>✦ Star Creator Studio</h2>
+        <button id="close-studio" class="studio-close" aria-label="Close studio">&times;</button>
+      </div>
+
+      <form id="star-form" novalidate>
+        <!-- Canvas -->
+        <div class="studio-canvas-wrap">
+          <canvas id="pixelCanvas" width="16" height="16"></canvas>
+          <div class="canvas-controls">
+            <div class="tool-group">
+              <label class="tool-btn active" data-tool="draw">
+                <span>🖌️</span> Draw
+              </label>
+              <label class="tool-btn" data-tool="erase">
+                <span>🧼</span> Erase
+              </label>
+              <label class="tool-btn" data-tool="fill">
+                <span>🪣</span> Fill
+              </label>
+            </div>
+            <div class="setting-row">
+              <label>Glow</label>
+              <input type="range" id="glowRange" min="0" max="1" step="0.1" value="0.6" />
+              <span id="glowVal">0.6</span>
+            </div>
+            <div class="setting-row">
+              <label>Color</label>
+              <input type="color" id="starColor" value="#ffffff" />
+            </div>
+            <button type="button" id="clearCanvas" class="btn-clear">Clear</button>
+          </div>
+        </div>
+
+        <!-- Form fields -->
+        <div class="studio-fields">
+          <div class="field">
+            <label for="creatorName">Creator Handle</label>
+            <input type="text" id="creatorName" placeholder="e.g. AstralDreamer" maxlength="30" required />
+          </div>
+          <div class="field">
+            <label for="starMessage">Message / Wish</label>
+            <textarea id="starMessage" rows="3" placeholder="What would you whisper to the cosmos?" required></textarea>
+          </div>
+          <div class="field">
+            <label for="starTag">Category Tag</label>
+            <select id="starTag">
+              <option value="Wish">Wish</option>
+              <option value="Memory">Memory</option>
+              <option value="Dream">Dream</option>
+              <option value="Art">Art</option>
+            </select>
+          </div>
+          <div class="field timecapsule-field">
+            <label for="timeCapsule">Time-Capsule Release (optional)</label>
+            <input type="datetime-local" id="timeCapsule" />
+            <p class="field-hint">The star stays hidden until this date.</p>
+          </div>
+        </div>
+
+        <!-- Audio preview -->
+        <div class="studio-audio">
+          <label>Star Chime</label>
+          <div class="audio-controls">
+            <select id="chimeWave">
+              <option value="sine">Sine (soft)</option>
+              <option value="triangle">Triangle (hollow)</option>
+              <option value="square">Square (bright)</option>
+              <option value="sawtooth">Sawtooth (buzz)</option>
+            </select>
+            <input type="range" id="chimeFreq" min="200" max="1200" step="1" value="523" />
+            <span id="chimeFreqVal">523 Hz</span>
+            <button type="button" id="btnTestChime" class="btn-test-chime">𔂾 Test Chime</button>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="studio-submit">
+          <button type="submit" id="submitStar" class="btn-submit">
+            <span>✦</span> Place Star in the Sky
+          </button>
+          <div id="form-status" class="form-status"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ COSMIC AUDIO ============ -->
+  <div id="audio-ctrl" class="audio-ctrl">
+    <button id="btn-audio-toggle" class="audio-toggle" aria-label="Toggle ambient audio">
+      <span class="audio-icon">𔂾</span>
+      <span class="audio-label" id="audioLabel">Ambient Audio: Off</span>
+    </button>
+  </div>
+
+  <!-- ============ NOTIFICATION TOAST ============ -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/audio-engine.js"></script>
+  <script src="js/sky-engine.js"></script>
+  <script src="js/creator-studio.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
